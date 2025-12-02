@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 import Icon from '@/components/ui/icon';
 
 const Index = () => {
@@ -48,6 +49,25 @@ const Index = () => {
   ];
 
   const [activeNav, setActiveNav] = useState('dashboard');
+  const [restartingServers, setRestartingServers] = useState<Set<string>>(new Set());
+
+  const handleRestart = (serverId: string, serverName: string) => {
+    setRestartingServers(prev => new Set(prev).add(serverId));
+    toast.loading(`Перезагрузка ${serverName}...`, { id: serverId });
+    
+    setTimeout(() => {
+      setRestartingServers(prev => {
+        const next = new Set(prev);
+        next.delete(serverId);
+        return next;
+      });
+      toast.success(`${serverName} успешно перезагружен`, { id: serverId });
+    }, 3000);
+  };
+
+  const handleOpenConsole = (serverName: string, ip: string) => {
+    toast.info(`Открываю консоль ${serverName} (${ip})...`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 dark">
@@ -253,14 +273,31 @@ const Index = () => {
                           <Progress value={server.disk} className="h-2" />
                         </div>
 
-                        <div className="flex gap-2 pt-2">
-                          <Button variant="outline" size="sm" className="flex-1 border-slate-700 hover:bg-slate-800">
-                            <Icon name="Settings" size={14} className="mr-2" />
-                            Настроить
+                        <div className="grid grid-cols-2 gap-2 pt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-slate-700 hover:bg-slate-800"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenConsole(server.name, server.ip);
+                            }}
+                          >
+                            <Icon name="Terminal" size={14} className="mr-2" />
+                            Консоль
                           </Button>
-                          <Button variant="outline" size="sm" className="flex-1 border-slate-700 hover:bg-slate-800">
-                            <Icon name="BarChart3" size={14} className="mr-2" />
-                            Статистика
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-slate-700 hover:bg-slate-800"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRestart(server.id, server.name);
+                            }}
+                            disabled={restartingServers.has(server.id)}
+                          >
+                            <Icon name={restartingServers.has(server.id) ? "Loader2" : "RotateCw"} size={14} className={`mr-2 ${restartingServers.has(server.id) ? 'animate-spin' : ''}`} />
+                            {restartingServers.has(server.id) ? 'Перезагрузка...' : 'Рестарт'}
                           </Button>
                         </div>
                       </CardContent>
