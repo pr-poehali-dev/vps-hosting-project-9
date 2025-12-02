@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import Icon from '@/components/ui/icon';
+import ServerConsole from '@/components/ServerConsole';
+import FileManager from '@/components/FileManager';
 
 const Index = () => {
   const [selectedServer, setSelectedServer] = useState<string | null>(null);
@@ -50,6 +53,9 @@ const Index = () => {
 
   const [activeNav, setActiveNav] = useState('dashboard');
   const [restartingServers, setRestartingServers] = useState<Set<string>>(new Set());
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [fileManagerOpen, setFileManagerOpen] = useState(false);
+  const [selectedServerForConsole, setSelectedServerForConsole] = useState<{id: string, name: string} | null>(null);
 
   const handleRestart = (serverId: string, serverName: string) => {
     setRestartingServers(prev => new Set(prev).add(serverId));
@@ -65,8 +71,14 @@ const Index = () => {
     }, 3000);
   };
 
-  const handleOpenConsole = (serverName: string, ip: string) => {
-    toast.info(`Открываю консоль ${serverName} (${ip})...`);
+  const handleOpenConsole = (serverId: string, serverName: string) => {
+    setSelectedServerForConsole({ id: serverId, name: serverName });
+    setConsoleOpen(true);
+  };
+
+  const handleOpenFileManager = (serverId: string, serverName: string) => {
+    setSelectedServerForConsole({ id: serverId, name: serverName });
+    setFileManagerOpen(true);
   };
 
   return (
@@ -280,7 +292,7 @@ const Index = () => {
                             className="border-slate-700 hover:bg-slate-800"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleOpenConsole(server.name, server.ip);
+                              handleOpenConsole(server.id, server.name);
                             }}
                           >
                             <Icon name="Terminal" size={14} className="mr-2" />
@@ -298,6 +310,30 @@ const Index = () => {
                           >
                             <Icon name={restartingServers.has(server.id) ? "Loader2" : "RotateCw"} size={14} className={`mr-2 ${restartingServers.has(server.id) ? 'animate-spin' : ''}`} />
                             {restartingServers.has(server.id) ? 'Перезагрузка...' : 'Рестарт'}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-slate-700 hover:bg-slate-800"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenFileManager(server.id, server.name);
+                            }}
+                          >
+                            <Icon name="FolderOpen" size={14} className="mr-2" />
+                            Файлы
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-slate-700 hover:bg-slate-800"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toast.info(`SFTP: sftp://root@${server.ip}:22`);
+                            }}
+                          >
+                            <Icon name="Cable" size={14} className="mr-2" />
+                            SFTP
                           </Button>
                         </div>
                       </CardContent>
@@ -416,9 +452,193 @@ const Index = () => {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            {activeNav === 'analytics' && (
+              <Card className="bg-slate-900/50 backdrop-blur-xl border-slate-800/50">
+                <CardHeader>
+                  <CardTitle className="text-white">Аналитика серверов</CardTitle>
+                  <CardDescription>Статистика использования ресурсов за последний месяц</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20">
+                      <Icon name="TrendingUp" size={32} className="text-blue-400 mb-3" />
+                      <div className="text-3xl font-bold text-white mb-2">1,248</div>
+                      <div className="text-sm text-slate-400">Всего запросов</div>
+                      <div className="text-xs text-green-400 mt-2">+18% за неделю</div>
+                    </div>
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20">
+                      <Icon name="Clock" size={32} className="text-purple-400 mb-3" />
+                      <div className="text-3xl font-bold text-white mb-2">98.7%</div>
+                      <div className="text-sm text-slate-400">Uptime</div>
+                      <div className="text-xs text-green-400 mt-2">Отличная стабильность</div>
+                    </div>
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-pink-500/10 to-pink-600/10 border border-pink-500/20">
+                      <Icon name="Zap" size={32} className="text-pink-400 mb-3" />
+                      <div className="text-3xl font-bold text-white mb-2">42ms</div>
+                      <div className="text-sm text-slate-400">Средний отклик</div>
+                      <div className="text-xs text-green-400 mt-2">-5ms за неделю</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeNav === 'billing' && (
+              <Card className="bg-slate-900/50 backdrop-blur-xl border-slate-800/50">
+                <CardHeader>
+                  <CardTitle className="text-white">Биллинг</CardTitle>
+                  <CardDescription>Информация о тарифе и платежах</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-600/10 border border-green-500/20">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <div className="text-sm text-slate-400 mb-1">Текущий баланс</div>
+                          <div className="text-4xl font-bold text-white">$245.00</div>
+                        </div>
+                        <Button className="bg-green-600 hover:bg-green-700">
+                          <Icon name="Plus" size={16} className="mr-2" />
+                          Пополнить
+                        </Button>
+                      </div>
+                      <div className="text-xs text-slate-400">Следующее списание: 15 декабря 2024</div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                        <div className="text-sm text-slate-400 mb-2">Расход за месяц</div>
+                        <div className="text-2xl font-bold text-white mb-1">$128.50</div>
+                        <Progress value={65} className="h-2" />
+                      </div>
+                      <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                        <div className="text-sm text-slate-400 mb-2">Прогноз на месяц</div>
+                        <div className="text-2xl font-bold text-white mb-1">$198.00</div>
+                        <Progress value={82} className="h-2" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeNav === 'domains' && (
+              <Card className="bg-slate-900/50 backdrop-blur-xl border-slate-800/50">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-white">Домены</CardTitle>
+                      <CardDescription>Управление доменами и DNS</CardDescription>
+                    </div>
+                    <Button className="bg-blue-500 hover:bg-blue-600">
+                      <Icon name="Plus" size={16} className="mr-2" />
+                      Добавить домен
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {[
+                      { domain: 'api.example.com', status: 'active', ssl: true, ip: '185.22.134.45' },
+                      { domain: 'www.example.com', status: 'active', ssl: true, ip: '192.168.1.101' },
+                      { domain: 'cdn.example.com', status: 'active', ssl: true, ip: '10.0.0.55' },
+                    ].map((domain, i) => (
+                      <div key={i} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Icon name="Globe" size={20} className="text-blue-400" />
+                          <div>
+                            <div className="text-white font-medium">{domain.domain}</div>
+                            <div className="text-xs text-slate-400 font-mono">{domain.ip}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {domain.ssl && (
+                            <Badge variant="outline" className="border-green-500/30 text-green-400">
+                              <Icon name="Lock" size={12} className="mr-1" />
+                              SSL
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="border-blue-500/30 text-blue-400">Активен</Badge>
+                          <Button variant="ghost" size="sm">
+                            <Icon name="Settings" size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeNav === 'profile' && (
+              <Card className="bg-slate-900/50 backdrop-blur-xl border-slate-800/50">
+                <CardHeader>
+                  <CardTitle className="text-white">Профиль</CardTitle>
+                  <CardDescription>Настройки аккаунта</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-3xl text-white font-bold">
+                        A
+                      </div>
+                      <div>
+                        <div className="text-xl font-bold text-white mb-1">Admin User</div>
+                        <div className="text-sm text-slate-400">admin@example.com</div>
+                        <Badge className="mt-2 bg-purple-500/20 text-purple-400 border-purple-500/30">Premium Plan</Badge>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                        <div className="text-sm text-slate-400 mb-1">Серверов</div>
+                        <div className="text-2xl font-bold text-white">4</div>
+                      </div>
+                      <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                        <div className="text-sm text-slate-400 mb-1">Доменов</div>
+                        <div className="text-2xl font-bold text-white">3</div>
+                      </div>
+                      <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                        <div className="text-sm text-slate-400 mb-1">Дата регистрации</div>
+                        <div className="text-lg font-semibold text-white">15.11.2024</div>
+                      </div>
+                      <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                        <div className="text-sm text-slate-400 mb-1">Статус</div>
+                        <div className="text-lg font-semibold text-green-400">Активен</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </main>
       </div>
+
+      <Dialog open={consoleOpen} onOpenChange={setConsoleOpen}>
+        <DialogContent className="max-w-4xl p-0 bg-transparent border-none">
+          {selectedServerForConsole && (
+            <ServerConsole
+              serverName={selectedServerForConsole.name}
+              serverId={selectedServerForConsole.id}
+              onClose={() => setConsoleOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={fileManagerOpen} onOpenChange={setFileManagerOpen}>
+        <DialogContent className="max-w-4xl p-0 bg-transparent border-none">
+          {selectedServerForConsole && (
+            <FileManager
+              serverName={selectedServerForConsole.name}
+              serverId={selectedServerForConsole.id}
+              onClose={() => setFileManagerOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
