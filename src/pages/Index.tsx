@@ -813,7 +813,7 @@ const Index = () => {
                         </div>
                         <div className="p-3 rounded bg-slate-900/50 border border-slate-700">
                           <div className="text-xs text-slate-500 mb-1">Пароль</div>
-                          <div className="font-mono text-sm text-slate-300 blur-sm hover:blur-none transition-all cursor-pointer">P@ssw0rd!2024</div>
+                          <div className="font-mono text-sm text-slate-300 blur-sm hover:blur-none transition-all cursor-pointer">iuosxab4@fdosVPS</div>
                         </div>
                       </div>
                       <div className="mt-4 p-3 rounded bg-blue-500/10 border border-blue-500/30">
