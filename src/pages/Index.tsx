@@ -809,7 +809,7 @@ const Index = () => {
                         </div>
                         <div className="p-3 rounded bg-slate-900/50 border border-slate-700">
                           <div className="text-xs text-slate-500 mb-1">Логин</div>
-                          <div className="font-mono text-sm text-slate-300">root</div>
+                          <div className="font-mono text-sm text-slate-300">iosxasb4.fc4ad3dc</div>
                         </div>
                         <div className="p-3 rounded bg-slate-900/50 border border-slate-700">
                           <div className="text-xs text-slate-500 mb-1">Пароль</div>
