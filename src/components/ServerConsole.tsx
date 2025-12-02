@@ -18,8 +18,9 @@ interface ServerConsoleProps {
 
 const ServerConsole = ({ serverName, serverId, onClose }: ServerConsoleProps) => {
   const [logs, setLogs] = useState<ConsoleLog[]>([
-    { text: `Welcome to ${serverName} Console`, type: 'success' },
-    { text: 'Available commands: .op, restart, stop, help', type: 'output' },
+    { text: `[СИСТЕМА] Подключение к серверу ${serverName}...`, type: 'output' },
+    { text: `[СИСТЕМА] Соединение установлено`, type: 'success' },
+    { text: `[СИСТЕМА] Сервер запущен`, type: 'success' },
     { text: '', type: 'output' },
   ]);
   const [command, setCommand] = useState('');
@@ -43,80 +44,137 @@ const ServerConsole = ({ serverName, serverId, onClose }: ServerConsoleProps) =>
 
     switch (trimmed) {
       case '.op':
-        addLog('Server Operations Menu:', 'output');
-        addLog('  1. restart - Restart the server', 'output');
-        addLog('  2. stop - Stop the server', 'output');
-        addLog('  3. status - Check server status', 'output');
-        addLog('  4. logs - View system logs', 'output');
+        addLog('╔══════════ МЕНЮ ОПЕРАЦИЙ ══════════╗', 'output');
+        addLog('║  1. restart - Перезагрузка сервера  ║', 'output');
+        addLog('║  2. stop - Остановка сервера        ║', 'output');
+        addLog('║  3. start - Запуск сервера          ║', 'output');
+        addLog('║  4. status - Статус сервера         ║', 'output');
+        addLog('║  5. players - Список игроков        ║', 'output');
+        addLog('║  6. backup - Создать бэкап          ║', 'output');
+        addLog('╚════════════════════════════════════╝', 'output');
         break;
 
       case 'restart':
-        addLog('Restarting server...', 'output');
+        addLog('[СИСТЕМА] Инициирована перезагрузка...', 'output');
+        addLog('[СИСТЕМА] Сохранение данных...', 'output');
         setServerStatus('stopped');
         setTimeout(() => {
-          addLog('Server stopped.', 'success');
-          addLog('Starting server...', 'output');
+          addLog('[СИСТЕМА] ✓ Данные сохранены', 'success');
+          addLog('[СИСТЕМА] Остановка сервиса...', 'output');
           setTimeout(() => {
-            addLog('Server started successfully.', 'success');
-            setServerStatus('running');
-          }, 1500);
-        }, 1000);
+            addLog('[СИСТЕМА] ✓ Сервис остановлен', 'success');
+            addLog('[СИСТЕМА] Запуск сервиса...', 'output');
+            setTimeout(() => {
+              addLog('[СИСТЕМА] ✓ Сервер успешно перезагружен', 'success');
+              addLog('[СИСТЕМА] Все системы работают в штатном режиме', 'success');
+              setServerStatus('running');
+            }, 1500);
+          }, 1000);
+        }, 800);
         break;
 
       case 'stop':
         if (serverStatus === 'stopped') {
-          addLog('Server is already stopped.', 'error');
+          addLog('[ОШИБКА] Сервер уже остановлен', 'error');
         } else {
-          addLog('Stopping server...', 'output');
+          addLog('[СИСТЕМА] Инициирована остановка сервера...', 'output');
+          addLog('[СИСТЕМА] Отключение игроков...', 'output');
           setTimeout(() => {
-            addLog('Server stopped successfully.', 'success');
-            setServerStatus('stopped');
+            addLog('[СИСТЕМА] ✓ Игроки отключены', 'success');
+            addLog('[СИСТЕМА] Сохранение мира...', 'output');
+            setTimeout(() => {
+              addLog('[СИСТЕМА] ✓ Мир сохранён', 'success');
+              addLog('[СИСТЕМА] ✓ Сервер успешно остановлен', 'success');
+              setServerStatus('stopped');
+            }, 1200);
           }, 1000);
         }
         break;
 
       case 'start':
         if (serverStatus === 'running') {
-          addLog('Server is already running.', 'error');
+          addLog('[ОШИБКА] Сервер уже запущен', 'error');
         } else {
-          addLog('Starting server...', 'output');
+          addLog('[СИСТЕМА] Инициирован запуск сервера...', 'output');
+          addLog('[СИСТЕМА] Загрузка конфигурации...', 'output');
           setTimeout(() => {
-            addLog('Server started successfully.', 'success');
-            setServerStatus('running');
-          }, 1000);
+            addLog('[СИСТЕМА] ✓ Конфигурация загружена', 'success');
+            addLog('[СИСТЕМА] Загрузка мира...', 'output');
+            setTimeout(() => {
+              addLog('[СИСТЕМА] ✓ Мир загружен', 'success');
+              addLog('[СИСТЕМА] Запуск сетевого сервиса...', 'output');
+              setTimeout(() => {
+                addLog('[СИСТЕМА] ✓ Сервер успешно запущен', 'success');
+                addLog('[СИСТЕМА] Сервер готов принимать подключения', 'success');
+                setServerStatus('running');
+              }, 1000);
+            }, 1200);
+          }, 800);
         }
         break;
 
       case 'status':
-        addLog(`Server Status: ${serverStatus === 'running' ? 'Running' : 'Stopped'}`, serverStatus === 'running' ? 'success' : 'error');
-        addLog(`Uptime: 15 days 7 hours`, 'output');
-        addLog(`Memory: 4.2GB / 8GB`, 'output');
-        addLog(`CPU Load: 45%`, 'output');
+        addLog('╔═══════════ СТАТУС СЕРВЕРА ═══════════╗', 'output');
+        addLog(`║ Состояние: ${serverStatus === 'running' ? '🟢 РАБОТАЕТ' : '🔴 ОСТАНОВЛЕН'}`, serverStatus === 'running' ? 'success' : 'error');
+        addLog(`║ Время работы: ${Math.floor(Math.random() * 72)}ч ${Math.floor(Math.random() * 60)}м`, 'output');
+        addLog(`║ CPU: ${Math.floor(Math.random() * 30 + 20)}%`, 'output');
+        addLog(`║ RAM: ${Math.floor(Math.random() * 40 + 30)}% (${Math.floor(Math.random() * 8 + 4)}GB/16GB)`, 'output');
+        addLog(`║ Игроков онлайн: ${Math.floor(Math.random() * 15)}/20`, 'output');
+        addLog(`║ TPS: ${(Math.random() * 0.5 + 19.5).toFixed(1)}`, 'output');
+        addLog('╚═══════════════════════════════════════╝', 'output');
         break;
 
       case 'logs':
-        addLog('[2024-12-02 15:23:45] System started', 'output');
-        addLog('[2024-12-02 15:24:12] Database connected', 'output');
-        addLog('[2024-12-02 15:25:01] API listening on port 8080', 'output');
-        addLog('[2024-12-02 15:30:22] Health check passed', 'success');
+        const now = new Date();
+        addLog(`[${now.toLocaleTimeString()}] [INFO] Сервер запущен`, 'output');
+        addLog(`[${now.toLocaleTimeString()}] [INFO] Загружен плагин: WorldGuard`, 'output');
+        addLog(`[${now.toLocaleTimeString()}] [INFO] Загружен плагин: EssentialsX`, 'output');
+        addLog(`[${now.toLocaleTimeString()}] [SUCCESS] Мир загружен успешно`, 'success');
+        addLog(`[${now.toLocaleTimeString()}] [INFO] Сервер доступен на порту 25565`, 'output');
+        break;
+
+      case 'players':
+        const playerCount = Math.floor(Math.random() * 8);
+        addLog(`Игроков онлайн: ${playerCount}/20`, 'output');
+        if (playerCount > 0) {
+          const players = ['Steve', 'Alex', 'Notch', 'Herobrine', 'MinerPro', 'CrafterGod', 'BlockBuilder', 'RedstoneKing'];
+          for (let i = 0; i < playerCount; i++) {
+            addLog(`  ${i + 1}. ${players[i]} (${Math.floor(Math.random() * 200) + 50}ms)`, 'output');
+          }
+        } else {
+          addLog('Нет игроков онлайн', 'output');
+        }
+        break;
+
+      case 'backup':
+        addLog('[BACKUP] Инициировано создание резервной копии...', 'output');
+        setTimeout(() => {
+          addLog('[BACKUP] Сохранение мира...', 'output');
+          setTimeout(() => {
+            addLog('[BACKUP] ✓ Резервная копия создана успешно', 'success');
+            addLog(`[BACKUP] Размер: ${(Math.random() * 500 + 100).toFixed(2)} MB`, 'output');
+          }, 2000);
+        }, 1000);
         break;
 
       case 'help':
-        addLog('Available commands:', 'output');
-        addLog('  .op - Open operations menu', 'output');
-        addLog('  restart - Restart the server', 'output');
-        addLog('  stop - Stop the server', 'output');
-        addLog('  start - Start the server', 'output');
-        addLog('  status - Check server status', 'output');
-        addLog('  logs - View system logs', 'output');
-        addLog('  clear - Clear console', 'output');
-        addLog('  help - Show this help message', 'output');
+        addLog('╔═══════════ ДОСТУПНЫЕ КОМАНДЫ ═══════════╗', 'output');
+        addLog('║  .op       - Меню операций                ║', 'output');
+        addLog('║  start     - Запустить сервер             ║', 'output');
+        addLog('║  stop      - Остановить сервер            ║', 'output');
+        addLog('║  restart   - Перезагрузить сервер         ║', 'output');
+        addLog('║  status    - Показать статус              ║', 'output');
+        addLog('║  players   - Список игроков онлайн        ║', 'output');
+        addLog('║  logs      - Просмотр системных логов     ║', 'output');
+        addLog('║  backup    - Создать резервную копию      ║', 'output');
+        addLog('║  clear     - Очистить консоль             ║', 'output');
+        addLog('╚══════════════════════════════════════════╝', 'output');
         break;
 
       case 'clear':
         setLogs([
-          { text: `Welcome to ${serverName} Console`, type: 'success' },
-          { text: 'Type "help" for available commands', type: 'output' },
+          { text: `[СИСТЕМА] Консоль очищена`, type: 'success' },
+          { text: '', type: 'output' },
         ]);
         break;
 
@@ -124,8 +182,23 @@ const ServerConsole = ({ serverName, serverId, onClose }: ServerConsoleProps) =>
         break;
 
       default:
-        addLog(`Command not found: ${cmd}`, 'error');
-        addLog('Type "help" for available commands', 'output');
+        if (cmd.startsWith('say ')) {
+          const message = cmd.substring(4);
+          addLog(`[СЕРВЕР] ${message}`, 'success');
+        } else if (cmd.startsWith('tp ')) {
+          addLog('[КОМАНДА] ✓ Телепортация выполнена', 'success');
+        } else if (cmd.startsWith('give ')) {
+          addLog('[КОМАНДА] ✓ Предмет выдан игроку', 'success');
+        } else if (cmd.startsWith('kick ')) {
+          const player = cmd.substring(5);
+          addLog(`[КОМАНДА] ✓ Игрок ${player} кикнут с сервера`, 'success');
+        } else if (cmd.startsWith('ban ')) {
+          const player = cmd.substring(4);
+          addLog(`[КОМАНДА] ✓ Игрок ${player} забанен`, 'success');
+        } else {
+          addLog(`[ОШИБКА] Команда не найдена: ${cmd}`, 'error');
+          addLog('[СИСТЕМА] Введите "help" для списка команд', 'output');
+        }
     }
 
     addLog('', 'output');

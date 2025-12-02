@@ -47,12 +47,16 @@ const Index = () => {
     { id: 'billing', label: 'Биллинг', icon: 'CreditCard' },
     { id: 'domains', label: 'Домены', icon: 'Globe' },
     { id: 'security', label: 'Безопасность', icon: 'Shield' },
+    { id: 'co-owners', label: 'Сов.Владельцы', icon: 'Users' },
+    { id: 'settings', label: 'Настройки', icon: 'Settings' },
     { id: 'support', label: 'Поддержка', icon: 'MessageCircle' },
     { id: 'profile', label: 'Профиль', icon: 'User' },
   ];
 
   const [activeNav, setActiveNav] = useState('dashboard');
   const [restartingServers, setRestartingServers] = useState<Set<string>>(new Set());
+  const [stoppingServers, setStoppingServers] = useState<Set<string>>(new Set());
+  const [startingServers, setStartingServers] = useState<Set<string>>(new Set());
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [fileManagerOpen, setFileManagerOpen] = useState(false);
   const [selectedServerForConsole, setSelectedServerForConsole] = useState<{id: string, name: string} | null>(null);
@@ -69,6 +73,34 @@ const Index = () => {
       });
       toast.success(`${serverName} успешно перезагружен`, { id: serverId });
     }, 3000);
+  };
+
+  const handleStop = (serverId: string, serverName: string) => {
+    setStoppingServers(prev => new Set(prev).add(serverId));
+    toast.loading(`Остановка ${serverName}...`, { id: `stop-${serverId}` });
+    
+    setTimeout(() => {
+      setStoppingServers(prev => {
+        const next = new Set(prev);
+        next.delete(serverId);
+        return next;
+      });
+      toast.success(`${serverName} остановлен`, { id: `stop-${serverId}` });
+    }, 2000);
+  };
+
+  const handleStart = (serverId: string, serverName: string) => {
+    setStartingServers(prev => new Set(prev).add(serverId));
+    toast.loading(`Запуск ${serverName}...`, { id: `start-${serverId}` });
+    
+    setTimeout(() => {
+      setStartingServers(prev => {
+        const next = new Set(prev);
+        next.delete(serverId);
+        return next;
+      });
+      toast.success(`${serverName} успешно запущен`, { id: `start-${serverId}` });
+    }, 2500);
   };
 
   const handleOpenConsole = (serverId: string, serverName: string) => {
@@ -289,19 +321,33 @@ const Index = () => {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="border-slate-700 hover:bg-slate-800"
+                            className="border-green-700 hover:bg-green-800 text-green-400"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleOpenConsole(server.id, server.name);
+                              handleStart(server.id, server.name);
                             }}
+                            disabled={startingServers.has(server.id)}
                           >
-                            <Icon name="Terminal" size={14} className="mr-2" />
-                            Консоль
+                            <Icon name={startingServers.has(server.id) ? "Loader2" : "Play"} size={14} className={`mr-2 ${startingServers.has(server.id) ? 'animate-spin' : ''}`} />
+                            {startingServers.has(server.id) ? 'Запуск...' : 'Start'}
                           </Button>
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="border-slate-700 hover:bg-slate-800"
+                            className="border-red-700 hover:bg-red-800 text-red-400"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStop(server.id, server.name);
+                            }}
+                            disabled={stoppingServers.has(server.id)}
+                          >
+                            <Icon name={stoppingServers.has(server.id) ? "Loader2" : "Square"} size={14} className={`mr-2 ${stoppingServers.has(server.id) ? 'animate-spin' : ''}`} />
+                            {stoppingServers.has(server.id) ? 'Стоп...' : 'Stop'}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-blue-700 hover:bg-blue-800 text-blue-400"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleRestart(server.id, server.name);
@@ -309,24 +355,36 @@ const Index = () => {
                             disabled={restartingServers.has(server.id)}
                           >
                             <Icon name={restartingServers.has(server.id) ? "Loader2" : "RotateCw"} size={14} className={`mr-2 ${restartingServers.has(server.id) ? 'animate-spin' : ''}`} />
-                            {restartingServers.has(server.id) ? 'Перезагрузка...' : 'Рестарт'}
+                            {restartingServers.has(server.id) ? 'Restart...' : 'Restart'}
                           </Button>
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="border-slate-700 hover:bg-slate-800"
+                            className="border-purple-700 hover:bg-purple-800 text-purple-400"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenConsole(server.id, server.name);
+                            }}
+                          >
+                            <Icon name="Terminal" size={14} className="mr-2" />
+                            Console
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-orange-700 hover:bg-orange-800 text-orange-400"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleOpenFileManager(server.id, server.name);
                             }}
                           >
                             <Icon name="FolderOpen" size={14} className="mr-2" />
-                            Файлы
+                            Files
                           </Button>
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="border-slate-700 hover:bg-slate-800"
+                            className="border-cyan-700 hover:bg-cyan-800 text-cyan-400"
                             onClick={(e) => {
                               e.stopPropagation();
                               toast.info(`SFTP: sftp://root@${server.ip}:22`);
@@ -528,10 +586,10 @@ const Index = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-white">Домены</CardTitle>
-                      <CardDescription>Управление доменами и DNS</CardDescription>
+                      <CardTitle className="text-white">Домены для Minecraft серверов</CardTitle>
+                      <CardDescription>Подключите домен к вашему серверу</CardDescription>
                     </div>
-                    <Button className="bg-blue-500 hover:bg-blue-600">
+                    <Button className="bg-blue-500 hover:bg-blue-600" onClick={() => toast.success('Введите домен и выберите сервер')}>
                       <Icon name="Plus" size={16} className="mr-2" />
                       Добавить домен
                     </Button>
@@ -540,32 +598,254 @@ const Index = () => {
                 <CardContent>
                   <div className="space-y-3">
                     {[
-                      { domain: 'api.example.com', status: 'active', ssl: true, ip: '185.22.134.45' },
-                      { domain: 'www.example.com', status: 'active', ssl: true, ip: '192.168.1.101' },
-                      { domain: 'cdn.example.com', status: 'active', ssl: true, ip: '10.0.0.55' },
+                      { domain: 'mc.craftplay.ru', server: 'minecraft-01', port: 25565, status: 'active', ssl: true, ip: '185.22.134.45', players: 12 },
+                      { domain: 'play.minecity.net', server: 'minecraft-02', port: 25566, status: 'active', ssl: true, ip: '192.168.1.101', players: 8 },
+                      { domain: 'srv.blockworld.com', server: 'minecraft-03', port: 25565, status: 'active', ssl: true, ip: '10.0.0.55', players: 5 },
                     ].map((domain, i) => (
-                      <div key={i} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Icon name="Globe" size={20} className="text-blue-400" />
-                          <div>
-                            <div className="text-white font-medium">{domain.domain}</div>
-                            <div className="text-xs text-slate-400 font-mono">{domain.ip}</div>
+                      <div key={i} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                              <Icon name="Gamepad2" size={24} className="text-white" />
+                            </div>
+                            <div>
+                              <div className="text-white font-semibold text-lg">{domain.domain}</div>
+                              <div className="text-xs text-slate-400 font-mono">{domain.ip}:{domain.port}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {domain.ssl && (
+                              <Badge variant="outline" className="border-green-500/30 text-green-400">
+                                <Icon name="Lock" size={12} className="mr-1" />
+                                SSL
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="border-blue-500/30 text-blue-400">
+                              <Icon name="Users" size={12} className="mr-1" />
+                              {domain.players} игроков
+                            </Badge>
+                            <Badge variant="outline" className="border-green-500/30 text-green-400">Активен</Badge>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {domain.ssl && (
-                            <Badge variant="outline" className="border-green-500/30 text-green-400">
-                              <Icon name="Lock" size={12} className="mr-1" />
-                              SSL
-                            </Badge>
-                          )}
-                          <Badge variant="outline" className="border-blue-500/30 text-blue-400">Активен</Badge>
-                          <Button variant="ghost" size="sm">
-                            <Icon name="Settings" size={16} />
+                        <div className="flex items-center gap-2 text-sm text-slate-400">
+                          <Icon name="Server" size={14} />
+                          <span>Сервер: {domain.server}</span>
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <Button size="sm" variant="outline" className="border-slate-700" onClick={() => {
+                            navigator.clipboard.writeText(domain.domain);
+                            toast.success('Адрес скопирован в буфер обмена');
+                          }}>
+                            <Icon name="Copy" size={14} className="mr-2" />
+                            Копировать адрес
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-slate-700">
+                            <Icon name="Settings" size={14} className="mr-2" />
+                            Настроить DNS
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-red-700 text-red-400 hover:bg-red-500/20">
+                            <Icon name="Unlink" size={14} className="mr-2" />
+                            Отвязать
                           </Button>
                         </div>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                    <div className="flex items-start gap-3">
+                      <Icon name="Info" size={20} className="text-blue-400 mt-1" />
+                      <div>
+                        <div className="text-white font-semibold mb-1">Как подключить домен к Minecraft серверу?</div>
+                        <div className="text-sm text-slate-300 space-y-1">
+                          <p>1. Добавьте A-запись в DNS: {'{'}ваш_домен{'}'} → {'{'}IP_сервера{'}'}</p>
+                          <p>2. Добавьте SRV-запись: _minecraft._tcp.{'{'}ваш_домен{'}'} → {'{'}IP_сервера{'}'}:{'{'}порт{'}'}</p>
+                          <p>3. Подождите 5-15 минут пока DNS обновится</p>
+                          <p>4. Подключайтесь через: {'{'}ваш_домен{'}'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeNav === 'co-owners' && (
+              <Card className="bg-slate-900/50 backdrop-blur-xl border-slate-800/50">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-white">Совладельцы</CardTitle>
+                      <CardDescription>Управление доступом к серверам</CardDescription>
+                    </div>
+                    <Button className="bg-blue-500 hover:bg-blue-600" onClick={() => toast.info('Введите email пользователя для приглашения')}>
+                      <Icon name="UserPlus" size={16} className="mr-2" />
+                      Пригласить
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {[
+                      { name: 'Иван Петров', email: 'ivan@example.com', role: 'admin', servers: ['minecraft-01', 'minecraft-02'], status: 'active', avatar: 'И' },
+                      { name: 'Мария Смирнова', email: 'maria@example.com', role: 'moderator', servers: ['minecraft-02'], status: 'active', avatar: 'М' },
+                      { name: 'Алексей Козлов', email: 'alexey@example.com', role: 'viewer', servers: ['minecraft-01'], status: 'pending', avatar: 'А' },
+                    ].map((user, i) => (
+                      <div key={i} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-xl text-white font-bold">
+                              {user.avatar}
+                            </div>
+                            <div>
+                              <div className="text-white font-semibold">{user.name}</div>
+                              <div className="text-sm text-slate-400">{user.email}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={user.status === 'active' ? 'border-green-500/30 text-green-400' : 'border-yellow-500/30 text-yellow-400'}>
+                              {user.status === 'active' ? 'Активен' : 'Ожидание'}
+                            </Badge>
+                            <Badge variant="outline" className="border-blue-500/30 text-blue-400">
+                              {user.role === 'admin' ? 'Администратор' : user.role === 'moderator' ? 'Модератор' : 'Наблюдатель'}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <span className="text-xs text-slate-400">Доступ к серверам:</span>
+                          {user.servers.map((server, idx) => (
+                            <Badge key={idx} variant="outline" className="border-slate-600 text-slate-300 text-xs">
+                              {server}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="border-slate-700">
+                            <Icon name="Settings" size={14} className="mr-2" />
+                            Настроить права
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-slate-700">
+                            <Icon name="Server" size={14} className="mr-2" />
+                            Изменить серверы
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-red-700 text-red-400 hover:bg-red-500/20">
+                            <Icon name="UserMinus" size={14} className="mr-2" />
+                            Удалить
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeNav === 'settings' && (
+              <Card className="bg-slate-900/50 backdrop-blur-xl border-slate-800/50">
+                <CardHeader>
+                  <CardTitle className="text-white">Настройки API и SFTP</CardTitle>
+                  <CardDescription>Управление доступом и безопасностью</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div className="p-6 rounded-lg bg-slate-800/50 border border-slate-700">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <Icon name="Key" size={24} className="text-blue-400" />
+                          <div>
+                            <div className="text-lg font-semibold text-white">API Ключ</div>
+                            <div className="text-sm text-slate-400">Используйте для доступа к API</div>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline" className="border-slate-700" onClick={() => {
+                          const key = 'sk_' + Math.random().toString(36).substr(2, 32);
+                          navigator.clipboard.writeText(key);
+                          toast.success('Новый API ключ скопирован');
+                        }}>
+                          <Icon name="RefreshCw" size={14} className="mr-2" />
+                          Пересоздать
+                        </Button>
+                      </div>
+                      <div className="p-3 rounded bg-slate-900/50 border border-slate-700 font-mono text-sm text-slate-300 flex items-center justify-between">
+                        <span className="blur-sm hover:blur-none transition-all cursor-pointer select-all">sk_7f9a8b3c2d1e0f4g5h6i7j8k9l0m1n2o</span>
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          navigator.clipboard.writeText('sk_7f9a8b3c2d1e0f4g5h6i7j8k9l0m1n2o');
+                          toast.success('API ключ скопирован');
+                        }}>
+                          <Icon name="Copy" size={14} />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-lg bg-slate-800/50 border border-slate-700">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <Icon name="Cable" size={24} className="text-cyan-400" />
+                          <div>
+                            <div className="text-lg font-semibold text-white">SFTP Доступ</div>
+                            <div className="text-sm text-slate-400">Настройки подключения к файлам</div>
+                          </div>
+                        </div>
+                        <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700" onClick={() => toast.info('Инструкция по SFTP отправлена на email')}>
+                          <Icon name="Download" size={14} className="mr-2" />
+                          Инструкция
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="p-3 rounded bg-slate-900/50 border border-slate-700">
+                          <div className="text-xs text-slate-500 mb-1">Хост</div>
+                          <div className="font-mono text-sm text-slate-300 flex items-center justify-between">
+                            <span>sftp.vpscloud.io</span>
+                            <Button size="sm" variant="ghost" onClick={() => {
+                              navigator.clipboard.writeText('sftp.vpscloud.io');
+                              toast.success('Хост скопирован');
+                            }}>
+                              <Icon name="Copy" size={14} />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="p-3 rounded bg-slate-900/50 border border-slate-700">
+                          <div className="text-xs text-slate-500 mb-1">Порт</div>
+                          <div className="font-mono text-sm text-slate-300">22</div>
+                        </div>
+                        <div className="p-3 rounded bg-slate-900/50 border border-slate-700">
+                          <div className="text-xs text-slate-500 mb-1">Логин</div>
+                          <div className="font-mono text-sm text-slate-300">root</div>
+                        </div>
+                        <div className="p-3 rounded bg-slate-900/50 border border-slate-700">
+                          <div className="text-xs text-slate-500 mb-1">Пароль</div>
+                          <div className="font-mono text-sm text-slate-300 blur-sm hover:blur-none transition-all cursor-pointer">P@ssw0rd!2024</div>
+                        </div>
+                      </div>
+                      <div className="mt-4 p-3 rounded bg-blue-500/10 border border-blue-500/30">
+                        <div className="text-sm text-slate-300">
+                          <strong className="text-blue-400">Рекомендуемые клиенты:</strong> FileZilla, WinSCP, Cyberduck
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-lg bg-slate-800/50 border border-slate-700">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Icon name="Shield" size={24} className="text-green-400" />
+                        <div>
+                          <div className="text-lg font-semibold text-white">IP Whitelist</div>
+                          <div className="text-sm text-slate-400">Ограничьте доступ по IP адресам</div>
+                        </div>
+                      </div>
+                      <div className="space-y-2 mb-3">
+                        {['185.22.134.45', '192.168.1.0/24'].map((ip, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded bg-slate-900/50 border border-slate-700">
+                            <span className="font-mono text-sm text-slate-300">{ip}</span>
+                            <Button size="sm" variant="ghost" className="text-red-400 hover:bg-red-500/20">
+                              <Icon name="X" size={14} />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button size="sm" variant="outline" className="border-slate-700 w-full">
+                        <Icon name="Plus" size={14} className="mr-2" />
+                        Добавить IP адрес
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
